@@ -279,19 +279,17 @@ module Unix::Exec
   def ssh_service_restart
     case self['platform']
     when /debian|ubuntu/
-      exec(Beaker::Command.new("service ssh restart"))
-    when /amazon|(el|centos|redhat|oracle|scientific)-[7-9]|fedora|archlinux-/
-      exec(Beaker::Command.new("systemctl restart sshd.service"))
-    when /el-|centos|redhat|oracle|scientific/
+      exec(Beaker::Command.new("systemctl restart ssh"))
+    when /(el|centos|redhat|oracle|scientific)-[0-6]/
       exec(Beaker::Command.new("/sbin/service sshd restart"))
-    when /opensuse|sles/
-      exec(Beaker::Command.new("/usr/sbin/rcsshd restart"))
     when /solaris/
       exec(Beaker::Command.new("svcadm restart svc:/network/ssh:default"))
     when /(free|open)bsd/
       exec(Beaker::Command.new("sudo /etc/rc.d/sshd restart"))
+    when /opensuse|sles/
+      exec(Beaker::Command.new("/usr/sbin/rcsshd restart"))
     else
-      raise ArgumentError, "Unsupported Platform: '#{self['platform']}'"
+      exec(Beaker::Command.new("systemctl restart sshd.service"))
     end
   end
 
@@ -306,7 +304,7 @@ module Unix::Exec
       directory = tmpdir
       exec(Beaker::Command.new("echo 'PermitUserEnvironment yes' | cat - /etc/ssh/sshd_config > #{directory}/sshd_config.permit"))
       exec(Beaker::Command.new("mv #{directory}/sshd_config.permit /etc/ssh/sshd_config"))
-      exec(Beaker::Command.new("echo '' >/etc/environment")) if /ubuntu-2(0|2).04/.match?(self['platform'])
+      exec(Beaker::Command.new("echo '' >/etc/environment")) if self['platform'].include?('ubuntu-')
     when /(free|open)bsd/
       exec(Beaker::Command.new("sudo perl -pi -e 's/^#?PermitUserEnvironment no/PermitUserEnvironment yes/' /etc/ssh/sshd_config"), { :pty => true })
     else
